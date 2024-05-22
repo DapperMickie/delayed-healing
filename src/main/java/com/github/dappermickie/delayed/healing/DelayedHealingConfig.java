@@ -4,6 +4,7 @@ import java.awt.Color;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.FontType;
 import net.runelite.client.config.Range;
 
 @ConfigGroup("DelayedHealing")
@@ -56,10 +57,21 @@ public interface DelayedHealingConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "overlayFont",
+		name = "Overlay Font",
+		description = "Configures the font of the text in the overlay",
+		position = 5
+	)
+	default FontType overlayFont()
+	{
+		return FontType.BOLD;
+	}
+
+	@ConfigItem(
 		keyName = "infobox",
 		name = "Infobox",
 		description = "Configures whether or not the infobox is enabled",
-		position = 5
+		position = 6
 	)
 	default boolean infobox()
 	{
@@ -70,7 +82,7 @@ public interface DelayedHealingConfig extends Config
 		keyName = "cookedWildKebbit",
 		name = "Wild Kebbit",
 		description = "Toggles the delayed timer infobox for cooked Wild Kebbits.",
-		position = 6
+		position = 7
 	)
 	default boolean wildKebbit()
 	{
@@ -81,7 +93,7 @@ public interface DelayedHealingConfig extends Config
 		keyName = "cookedLarupia",
 		name = "Larupia",
 		description = "Toggles the delayed timer infobox for cooked Larupia.",
-		position = 6
+		position = 7
 	)
 	default boolean larupia()
 	{
@@ -92,7 +104,7 @@ public interface DelayedHealingConfig extends Config
 		keyName = "cookedBarbTailedKebbit",
 		name = "Barb-Tailed Kebbit",
 		description = "Toggles the delayed timer infobox for cooked Barb-Tailed Kebbit.",
-		position = 6
+		position = 7
 	)
 	default boolean barbTailedKebbit()
 	{
@@ -103,7 +115,7 @@ public interface DelayedHealingConfig extends Config
 		keyName = "cookedGraahk",
 		name = "Graahk",
 		description = "Toggles the delayed timer infobox for cooked Graahks.",
-		position = 6
+		position = 7
 	)
 	default boolean cookedGraahk()
 	{
@@ -114,7 +126,7 @@ public interface DelayedHealingConfig extends Config
 		keyName = "cookedKyatt",
 		name = "Kyatt",
 		description = "Toggles the delayed timer infobox for cooked Kyatts.",
-		position = 6
+		position = 7
 	)
 	default boolean cookedKyatt()
 	{
@@ -125,7 +137,7 @@ public interface DelayedHealingConfig extends Config
 		keyName = "cookedPyreFox",
 		name = "Pyre Fox",
 		description = "Toggles the delayed timer infobox for cooked Pyre Foxes.",
-		position = 6
+		position = 7
 	)
 	default boolean cookedPyreFox()
 	{
@@ -136,7 +148,7 @@ public interface DelayedHealingConfig extends Config
 		keyName = "cookedDashingKebbit",
 		name = "Dashing Kebbit",
 		description = "Toggles the delayed timer infobox for cooked Dashing Kebbits.",
-		position = 6
+		position = 7
 	)
 	default boolean cookedDashingKebbit()
 	{
@@ -147,7 +159,7 @@ public interface DelayedHealingConfig extends Config
 		keyName = "cookedSunlightAntelope",
 		name = "Sunlight Antelope",
 		description = "Toggles the delayed timer infobox for cooked Sunlight Antelopes.",
-		position = 6
+		position = 7
 	)
 	default boolean cookedSunlightAntelope()
 	{
@@ -158,7 +170,7 @@ public interface DelayedHealingConfig extends Config
 		keyName = "cookedMoonlightAntelope",
 		name = "Moonlight Antelope",
 		description = "Toggles the delayed timer infobox for cooked Moonlight Antelopes.",
-		position = 6
+		position = 7
 	)
 	default boolean cookedMoonlightAntelope()
 	{

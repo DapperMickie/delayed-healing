@@ -80,7 +80,7 @@ public class DelayedHealingOverlay extends Overlay
 			.getCanvasLocation();
 		String text = String.valueOf(ticksLeft);
 		graphics.setColor(config.overlayColor());
-		graphics.setFont(FontType.BOLD.getFont());
+		graphics.setFont(config.overlayFont().getFont());
 		graphics.drawString(text, location.getX() + config.overlayXOffset(), location.getY() + config.overlayYOffset());
 	}
 }
