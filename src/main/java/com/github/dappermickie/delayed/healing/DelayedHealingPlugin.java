@@ -2,30 +2,22 @@ package com.github.dappermickie.delayed.healing;
 
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.AnimationID;
-import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.ItemID;
 import net.runelite.api.events.AnimationChanged;
-import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
-import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 
 @Slf4j
@@ -44,6 +36,12 @@ public class DelayedHealingPlugin extends Plugin
 	private InfoBoxManager infoBoxManager;
 
 	@Inject
+	private DelayedHealingOverlay delayedHealingOverlay;
+
+	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
 	private ItemManager itemManager;
 
 	private DelayedHealingInfoBox activeInfobox = null;
@@ -54,7 +52,14 @@ public class DelayedHealingPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		overlayManager.add(delayedHealingOverlay);
 		updateInventoryState();
+	}
+
+	@Override
+	protected void shutDown() throws Exception
+	{
+		overlayManager.remove(delayedHealingOverlay);
 	}
 
 	@Subscribe
@@ -73,10 +78,11 @@ public class DelayedHealingPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		delayedHealingOverlay.tickTimer();
 		if (activeInfobox != null)
 		{
 			activeInfobox.tickTimer();
-			if (activeInfobox.ticksLeft() <= 0)
+			if (activeInfobox.ticksLeft() <= 0 || !config.infobox())
 			{
 				infoBoxManager.removeInfoBox(activeInfobox);
 				activeInfobox = null;
@@ -136,22 +142,32 @@ public class DelayedHealingPlugin extends Plugin
 	{
 		BufferedImage itemImage = itemManager.getImage(itemId);
 		DelayedHeals item = DelayedHeals.getDelayedHealByItemId(itemId);
-		if (shouldShowInfoBoxForItem(item))
+		if (isItemEnabled(item))
 		{
 			DelayedHealingInfoBox infobox = new DelayedHealingInfoBox(itemImage, this, item.getTickDelay());
-			infoBoxManager.addInfoBox(infobox);
-			if (activeInfobox != null)
+			delayedHealingOverlay.setActiveHeal(item);
+			if (config.infobox())
 			{
-				infoBoxManager.removeInfoBox(activeInfobox);
+				infoBoxManager.addInfoBox(infobox);
+				if (activeInfobox != null)
+				{
+					infoBoxManager.removeInfoBox(activeInfobox);
+				}
+				activeInfobox = infobox;
 			}
-			activeInfobox = infobox;
 		}
 	}
 
-	private boolean shouldShowInfoBoxForItem(DelayedHeals item)
+	private boolean isItemEnabled(DelayedHeals item)
 	{
 		switch (item)
 		{
+			case COOKED_WILD_KEBBIT:
+				return config.wildKebbit();
+			case COOKED_LARUPIA:
+				return config.larupia();
+			case COOKED_BARBTAILED_KEBBIT:
+				return config.barbTailedKebbit();
 			case COOKED_GRAAHK:
 				return config.cookedGraahk();
 			case COOKED_KYATT:
