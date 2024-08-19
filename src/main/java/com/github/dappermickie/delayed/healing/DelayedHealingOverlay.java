@@ -19,7 +19,7 @@ public class DelayedHealingOverlay extends Overlay
 	private final Client client;
 	private final DelayedHealingConfig config;
 	private DelayedHeals activeHeal;
-	private int ticksLeft;
+	private int startingTick;
 
 	@Inject
 	public DelayedHealingOverlay(Client client, DelayedHealingConfig config)
@@ -34,9 +34,20 @@ public class DelayedHealingOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		final Widget inventoryWidget = client.getWidget(ComponentID.INVENTORY_CONTAINER);
-		if (config.overlay() && activeHeal != null && !inventoryWidget.isHidden())
+		if (config.overlay() && activeHeal != null)
 		{
+			int ticksLeft = activeHeal.getTickDelay() - (client.getTickCount() - startingTick);
+			if (ticksLeft <= 0) {
+				clearActiveHeal();
+				return null;
+			}
+			Widget inventoryWidget = client.getWidget(ComponentID.INVENTORY_CONTAINER);
+			if (inventoryWidget.isHidden()) {
+				inventoryWidget = client.getWidget(ComponentID.BANK_INVENTORY_ITEM_CONTAINER);
+			}
+			if (inventoryWidget.isHidden()) {
+				return null;
+			}
 			Item[] items = client.getItemContainer(InventoryID.INVENTORY).getItems();
 			for (int i = 0; i < items.length; i++)
 			{
@@ -53,24 +64,12 @@ public class DelayedHealingOverlay extends Overlay
 	public void setActiveHeal(DelayedHeals heal)
 	{
 		this.activeHeal = heal;
-		this.ticksLeft = heal.getTickDelay();
+		this.startingTick = client.getTickCount();
 	}
 
 	public void clearActiveHeal()
 	{
 		this.activeHeal = null;
-	}
-
-	public void tickTimer()
-	{
-		if (activeHeal != null)
-		{
-			ticksLeft--;
-			if (ticksLeft <= 0)
-			{
-				clearActiveHeal();
-			}
-		}
 	}
 
 	private void drawTicksOverlay(Graphics2D graphics, Widget inventoryWidget, int ticksLeft, int index)

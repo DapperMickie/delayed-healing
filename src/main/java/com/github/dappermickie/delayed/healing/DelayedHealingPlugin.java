@@ -6,19 +6,17 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.api.InventoryID;
-import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.events.AnimationChanged;
-import net.runelite.api.events.GameTick;
+import net.runelite.api.*;
+import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
+import net.runelite.client.util.Text;
 
 @Slf4j
 @PluginDescriptor(
@@ -46,54 +44,75 @@ public class DelayedHealingPlugin extends Plugin
 
 	private DelayedHealingInfoBox activeInfobox = null;
 
-	private final Map<Integer, Item> previousInventory = new HashMap<>();
+	private final Map<Integer, Integer> previousInventory = new HashMap<>();
 	private boolean isEating = false;
 
 	@Override
 	protected void startUp() throws Exception
 	{
 		overlayManager.add(delayedHealingOverlay);
-		updateInventoryState();
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(delayedHealingOverlay);
+		if (activeInfobox != null) {
+			infoBoxManager.removeInfoBox(activeInfobox);
+			activeInfobox = null;
+		}
 	}
 
 	@Subscribe
-	public void onAnimationChanged(AnimationChanged event)
-	{
-		if (event.getActor() == client.getLocalPlayer())
-		{
-			int animationId = client.getLocalPlayer().getAnimation();
-			if (isEatingAnimation(animationId))
-			{
-				isEating = true;
-			}
+	private void onGameStateChanged(GameStateChanged gameStateChanged) {
+		if (gameStateChanged.getGameState().equals(GameState.LOGGED_IN)) {
+			isEating = false;
+			updateInventoryState();
 		}
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event) {
+		if (!event.getGroup().equals("DelayedHealing")) {
+			return;
+		}
+		if (!config.infobox()) {
+			infoBoxManager.removeInfoBox(activeInfobox);
+			activeInfobox = null;
+		}
+	}
+
+	@Subscribe
+	public void onMenuOptionClicked(MenuOptionClicked event) {
+		String menuOption = Text.removeTags(event.getMenuOption());
+		if (menuOption.equals("Eat") && isApplicableConsumable(event.getItemId())) {
+			isEating = true;
+		}
+	}
+
+	@Subscribe
+	private void onItemContainerChanged(ItemContainerChanged event) {
+		if (event.getContainerId() != InventoryID.INVENTORY.getId() && event.getContainerId() != InventoryID.BANK.getId()) {
+			return;
+		}
+		if (isEating) {
+			detectConsumableUsage();
+			isEating = false;
+		}
+		updateInventoryState();
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		delayedHealingOverlay.tickTimer();
-		if (activeInfobox != null)
-		{
+		if (activeInfobox != null) {
 			activeInfobox.tickTimer();
-			if (activeInfobox.ticksLeft() <= 0 || !config.infobox())
-			{
+			if (activeInfobox.ticksLeft() <= 0) {
 				infoBoxManager.removeInfoBox(activeInfobox);
 				activeInfobox = null;
 			}
 		}
-		if (isEating)
-		{
-			detectConsumableUsage();
-			isEating = false;
-		}
-		updateInventoryState();
+		isEating = false;
 	}
 
 	private void updateInventoryState()
@@ -102,11 +121,8 @@ public class DelayedHealingPlugin extends Plugin
 		ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
 		if (inventory != null)
 		{
-			Item[] items = inventory.getItems();
-			for (int i = 0; i < items.length; i++)
-			{
-				Item item = items[i];
-				previousInventory.put(i, item);
+			for (Item item : inventory.getItems()) {
+				previousInventory.put(item.getId(), previousInventory.getOrDefault(item.getId(), 0) + item.getQuantity());
 			}
 		}
 	}
@@ -119,42 +135,40 @@ public class DelayedHealingPlugin extends Plugin
 			return;
 		}
 
-		Item[] items = inventory.getItems();
-		for (int i = 0; i < items.length; i++)
-		{
-			Item item = items[i];
-			Item previousItem = previousInventory.getOrDefault(i, null);
-			int currentQuantity = item.getQuantity();
+		Map<Integer, Integer> currentInventory = new HashMap<>();
+		for (Item item : inventory.getItems()) {
+			currentInventory.put(item.getId(), currentInventory.getOrDefault(item.getId(), 0) + item.getQuantity());
+		}
 
-			if (previousItem.getQuantity() > currentQuantity && isConsumable(previousItem.getId()))
-			{
-				handleConsumable(previousItem.getId());
+		for (Map.Entry<Integer, Integer> entry : previousInventory.entrySet()) {
+			int itemID = entry.getKey();
+			int previousItemQuantity = entry.getValue();
+			if (previousItemQuantity > currentInventory.getOrDefault(itemID, 0) && isApplicableConsumable(itemID)) {
+				handleConsumable(itemID);
 			}
 		}
 	}
 
-	private boolean isConsumable(int itemId)
+	private boolean isApplicableConsumable(int itemId)
 	{
-		return DelayedHeals.getDelayedHealByItemId(itemId) != null;
+		DelayedHeals item = DelayedHeals.getDelayedHealByItemId(itemId);
+		return item != null && isItemEnabled(item);
 	}
 
 	private void handleConsumable(int itemId)
 	{
-		BufferedImage itemImage = itemManager.getImage(itemId);
 		DelayedHeals item = DelayedHeals.getDelayedHealByItemId(itemId);
-		if (isItemEnabled(item))
+		delayedHealingOverlay.setActiveHeal(item);
+		if (config.infobox())
 		{
+			BufferedImage itemImage = itemManager.getImage(itemId);
 			DelayedHealingInfoBox infobox = new DelayedHealingInfoBox(itemImage, this, item.getTickDelay());
-			delayedHealingOverlay.setActiveHeal(item);
-			if (config.infobox())
+			if (activeInfobox != null)
 			{
-				infoBoxManager.addInfoBox(infobox);
-				if (activeInfobox != null)
-				{
-					infoBoxManager.removeInfoBox(activeInfobox);
-				}
-				activeInfobox = infobox;
+				infoBoxManager.removeInfoBox(activeInfobox);
 			}
+			infoBoxManager.addInfoBox(infobox);
+			activeInfobox = infobox;
 		}
 	}
 
@@ -187,7 +201,7 @@ public class DelayedHealingPlugin extends Plugin
 
 	private boolean isEatingAnimation(int animationId)
 	{
-		return animationId == 829;
+		return animationId == AnimationID.CONSUMING;
 	}
 
 	@Provides
