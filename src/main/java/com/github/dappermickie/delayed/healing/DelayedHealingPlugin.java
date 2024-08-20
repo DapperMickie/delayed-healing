@@ -199,11 +199,6 @@ public class DelayedHealingPlugin extends Plugin
 		}
 	}
 
-	private boolean isEatingAnimation(int animationId)
-	{
-		return animationId == AnimationID.CONSUMING;
-	}
-
 	@Provides
 	DelayedHealingConfig provideConfig(ConfigManager configManager)
 	{
