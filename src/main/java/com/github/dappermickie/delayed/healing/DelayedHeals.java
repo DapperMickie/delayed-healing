@@ -26,8 +26,10 @@ public enum DelayedHeals
 
 	private static final Map<Integer, DelayedHeals> ITEM_MAP = new HashMap<>();
 
-	static {
-		for (DelayedHeals heal : DelayedHeals.values()) {
+	static
+	{
+		for (DelayedHeals heal : DelayedHeals.values())
+		{
 			ITEM_MAP.put(heal.itemId, heal);
 		}
 	}

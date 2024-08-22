@@ -36,16 +36,19 @@ public class DelayedHealingOverlay extends Overlay
 		if (config.overlay() && activeHeal != null)
 		{
 			int ticksLeft = activeHeal.getTickDelay() - (client.getTickCount() - startingTick);
-			if (ticksLeft <= 0) {
+			if (ticksLeft <= 0)
+			{
 				clearActiveHeal();
 				return null;
 			}
 			Widget inventoryWidget = client.getWidget(ComponentID.INVENTORY_CONTAINER);
-			if (inventoryWidget.isHidden()) {
+			if (inventoryWidget.isHidden())
+			{
 				inventoryWidget = client.getWidget(ComponentID.BANK_INVENTORY_ITEM_CONTAINER);
-			}
-			if (inventoryWidget.isHidden()) {
-				return null;
+				if (inventoryWidget.isHidden())
+				{
+					return null;
+				}
 			}
 			Item[] items = client.getItemContainer(InventoryID.INVENTORY).getItems();
 			for (int i = 0; i < items.length; i++)

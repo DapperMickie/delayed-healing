@@ -57,45 +57,56 @@ public class DelayedHealingPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(delayedHealingOverlay);
-		if (activeInfobox != null) {
+		if (activeInfobox != null)
+		{
 			infoBoxManager.removeInfoBox(activeInfobox);
 			activeInfobox = null;
 		}
 	}
 
 	@Subscribe
-	private void onGameStateChanged(GameStateChanged gameStateChanged) {
-		if (gameStateChanged.getGameState().equals(GameState.LOGGED_IN)) {
+	private void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		if (gameStateChanged.getGameState().equals(GameState.LOGGED_IN))
+		{
 			isEating = false;
 			updateInventoryState();
 		}
 	}
 
 	@Subscribe
-	public void onConfigChanged(ConfigChanged event) {
-		if (!event.getGroup().equals("DelayedHealing")) {
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (!event.getGroup().equals("DelayedHealing"))
+		{
 			return;
 		}
-		if (!config.infobox()) {
+		if (!config.infobox())
+		{
 			infoBoxManager.removeInfoBox(activeInfobox);
 			activeInfobox = null;
 		}
 	}
 
 	@Subscribe
-	public void onMenuOptionClicked(MenuOptionClicked event) {
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
 		String menuOption = Text.removeTags(event.getMenuOption());
-		if (menuOption.equals("Eat") && isApplicableConsumable(event.getItemId())) {
+		if (menuOption.equals("Eat") && isApplicableConsumable(event.getItemId()))
+		{
 			isEating = true;
 		}
 	}
 
 	@Subscribe
-	private void onItemContainerChanged(ItemContainerChanged event) {
-		if (event.getContainerId() != InventoryID.INVENTORY.getId() && event.getContainerId() != InventoryID.BANK.getId()) {
+	private void onItemContainerChanged(ItemContainerChanged event)
+	{
+		if (event.getContainerId() != InventoryID.INVENTORY.getId() && event.getContainerId() != InventoryID.BANK.getId())
+		{
 			return;
 		}
-		if (isEating) {
+		if (isEating)
+		{
 			detectConsumableUsage();
 			isEating = false;
 		}
@@ -105,9 +116,11 @@ public class DelayedHealingPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		if (activeInfobox != null) {
+		if (activeInfobox != null)
+		{
 			activeInfobox.tickTimer();
-			if (activeInfobox.ticksLeft() <= 0) {
+			if (activeInfobox.ticksLeft() <= 0)
+			{
 				infoBoxManager.removeInfoBox(activeInfobox);
 				activeInfobox = null;
 			}
@@ -121,8 +134,9 @@ public class DelayedHealingPlugin extends Plugin
 		ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
 		if (inventory != null)
 		{
-			for (Item item : inventory.getItems()) {
-				previousInventory.put(item.getId(), previousInventory.getOrDefault(item.getId(), 0) + item.getQuantity());
+			for (Item item : inventory.getItems())
+			{
+				previousInventory.merge(item.getId(), item.getQuantity(), Integer::sum);
 			}
 		}
 	}
@@ -136,14 +150,17 @@ public class DelayedHealingPlugin extends Plugin
 		}
 
 		Map<Integer, Integer> currentInventory = new HashMap<>();
-		for (Item item : inventory.getItems()) {
-			currentInventory.put(item.getId(), currentInventory.getOrDefault(item.getId(), 0) + item.getQuantity());
+		for (Item item : inventory.getItems())
+		{
+			currentInventory.merge(item.getId(), item.getQuantity(), Integer::sum);
 		}
 
-		for (Map.Entry<Integer, Integer> entry : previousInventory.entrySet()) {
+		for (Map.Entry<Integer, Integer> entry : previousInventory.entrySet())
+		{
 			int itemID = entry.getKey();
 			int previousItemQuantity = entry.getValue();
-			if (previousItemQuantity > currentInventory.getOrDefault(itemID, 0) && isApplicableConsumable(itemID)) {
+			if (previousItemQuantity > currentInventory.getOrDefault(itemID, 0) && isApplicableConsumable(itemID))
+			{
 				handleConsumable(itemID);
 			}
 		}
