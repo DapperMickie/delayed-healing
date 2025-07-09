@@ -6,7 +6,11 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
+import net.runelite.api.gameval.*;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -101,7 +105,7 @@ public class DelayedHealingPlugin extends Plugin
 	@Subscribe
 	private void onItemContainerChanged(ItemContainerChanged event)
 	{
-		if (event.getContainerId() != InventoryID.INVENTORY.getId() && event.getContainerId() != InventoryID.BANK.getId())
+		if (event.getContainerId() != InventoryID.INV && event.getContainerId() != InventoryID.BANK)
 		{
 			return;
 		}
@@ -131,7 +135,7 @@ public class DelayedHealingPlugin extends Plugin
 	private void updateInventoryState()
 	{
 		previousInventory.clear();
-		ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
+		ItemContainer inventory = client.getItemContainer(InventoryID.INV);
 		if (inventory != null)
 		{
 			for (Item item : inventory.getItems())
@@ -143,7 +147,7 @@ public class DelayedHealingPlugin extends Plugin
 
 	private void detectConsumableUsage()
 	{
-		ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
+		ItemContainer inventory = client.getItemContainer(InventoryID.INV);
 		if (inventory == null)
 		{
 			return;
@@ -179,7 +183,7 @@ public class DelayedHealingPlugin extends Plugin
 		if (config.infobox())
 		{
 			BufferedImage itemImage = itemManager.getImage(itemId);
-			DelayedHealingInfoBox infobox = new DelayedHealingInfoBox(itemImage, this, item.getTickDelay());
+			DelayedHealingInfoBox infobox = new DelayedHealingInfoBox(itemImage, this, item.getTickDelay() + 1);
 			if (activeInfobox != null)
 			{
 				infoBoxManager.removeInfoBox(activeInfobox);

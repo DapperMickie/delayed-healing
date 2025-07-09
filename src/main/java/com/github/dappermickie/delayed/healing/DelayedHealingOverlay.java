@@ -4,10 +4,10 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import javax.inject.Inject;
 import net.runelite.api.Client;
-import net.runelite.api.InventoryID;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.Point;
-import net.runelite.api.widgets.ComponentID;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -19,6 +19,8 @@ public class DelayedHealingOverlay extends Overlay
 	private final DelayedHealingConfig config;
 	private DelayedHeals activeHeal;
 	private int startingTick;
+
+	private static final int BankInventoryID = 983043;
 
 	@Inject
 	public DelayedHealingOverlay(Client client, DelayedHealingConfig config)
@@ -35,22 +37,22 @@ public class DelayedHealingOverlay extends Overlay
 	{
 		if (config.overlay() && activeHeal != null)
 		{
-			int ticksLeft = activeHeal.getTickDelay() - (client.getTickCount() - startingTick);
+			int ticksLeft = activeHeal.getTickDelay() + 1 - (client.getTickCount() - startingTick);
 			if (ticksLeft <= 0)
 			{
 				clearActiveHeal();
 				return null;
 			}
-			Widget inventoryWidget = client.getWidget(ComponentID.INVENTORY_CONTAINER);
+			Widget inventoryWidget = client.getWidget(InterfaceID.Inventory.ITEMS);
 			if (inventoryWidget.isHidden())
 			{
-				inventoryWidget = client.getWidget(ComponentID.BANK_INVENTORY_ITEM_CONTAINER);
+				inventoryWidget = client.getWidget(BankInventoryID);
 				if (inventoryWidget.isHidden())
 				{
 					return null;
 				}
 			}
-			Item[] items = client.getItemContainer(InventoryID.INVENTORY).getItems();
+			Item[] items = client.getItemContainer(InventoryID.INV).getItems();
 			for (int i = 0; i < items.length; i++)
 			{
 				Item item = items[i];
