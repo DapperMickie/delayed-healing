@@ -5,6 +5,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.FontType;
+import net.runelite.client.config.Notification;
 import net.runelite.client.config.Range;
 
 @ConfigGroup("DelayedHealing")
@@ -76,6 +77,17 @@ public interface DelayedHealingConfig extends Config
 	default boolean infobox()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "notifyWhenReady",
+		name = "Notify when ready",
+		description = "Notify when another hunter meat can be eaten",
+		position = 16
+	)
+	default Notification notifyWhenReady()
+	{
+		return Notification.OFF;
 	}
 
 	@ConfigItem(
