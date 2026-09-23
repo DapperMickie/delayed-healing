@@ -79,6 +79,17 @@ public interface DelayedHealingConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "notifyWhenReady",
+		name = "Notify when ready",
+		description = "Notify when another hunter meat can be eaten",
+		position = 16
+	)
+	default boolean notifyWhenReady()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "cookedWildKebbit",
 		name = "Wild Kebbit",
 		description = "Toggles the delayed timer infobox for cooked Wild Kebbits.",

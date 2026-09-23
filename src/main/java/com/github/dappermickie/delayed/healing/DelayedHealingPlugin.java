@@ -12,6 +12,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.events.*;
+import net.runelite.client.Notifier;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -46,7 +47,11 @@ public class DelayedHealingPlugin extends Plugin
 	@Inject
 	private ItemManager itemManager;
 
+	@Inject
+	private Notifier notifier;
+
 	private DelayedHealingInfoBox activeInfobox = null;
+	private int ticksUntilReady;
 
 	private final Map<Integer, Integer> previousInventory = new HashMap<>();
 	private boolean isEating = false;
@@ -61,6 +66,8 @@ public class DelayedHealingPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(delayedHealingOverlay);
+		delayedHealingOverlay.clearActiveHeal();
+		ticksUntilReady = 0;
 		if (activeInfobox != null)
 		{
 			infoBoxManager.removeInfoBox(activeInfobox);
@@ -75,6 +82,16 @@ public class DelayedHealingPlugin extends Plugin
 		{
 			isEating = false;
 			updateInventoryState();
+		}
+		else
+		{
+			ticksUntilReady = 0;
+			delayedHealingOverlay.clearActiveHeal();
+			if (activeInfobox != null)
+			{
+				infoBoxManager.removeInfoBox(activeInfobox);
+				activeInfobox = null;
+			}
 		}
 	}
 
@@ -120,6 +137,10 @@ public class DelayedHealingPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		if (ticksUntilReady > 0 && --ticksUntilReady == 0 && config.notifyWhenReady())
+		{
+			notifier.notify("You can eat another hunter meat now.");
+		}
 		if (activeInfobox != null)
 		{
 			activeInfobox.tickTimer();
@@ -179,6 +200,7 @@ public class DelayedHealingPlugin extends Plugin
 	private void handleConsumable(int itemId)
 	{
 		DelayedHeals item = DelayedHeals.getDelayedHealByItemId(itemId);
+		ticksUntilReady = item.getTickDelay() + 1;
 		delayedHealingOverlay.setActiveHeal(item);
 		if (config.infobox())
 		{
