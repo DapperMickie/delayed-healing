@@ -137,9 +137,9 @@ public class DelayedHealingPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		if (ticksUntilReady > 0 && --ticksUntilReady == 0 && config.notifyWhenReady())
+		if (ticksUntilReady > 0 && --ticksUntilReady == 0)
 		{
-			notifier.notify("You can eat another hunter meat now.");
+			notifier.notify(config.notifyWhenReady(), "You can eat another hunter meat now.");
 		}
 		if (activeInfobox != null)
 		{
